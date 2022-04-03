@@ -1,0 +1,7 @@
+policy_module(caddy, 1.0.0)
+
+require {
+    type httpd_t;
+}
+
+kernel_read_net_sysctls(httpd_t)

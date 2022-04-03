@@ -1,0 +1,4 @@
+DISKSIZE=30GB
+CPUNUM=4
+RAM=4096
+ISOSOURCE=/home/ssfdust/Downloads/ISO/Rocky-8.4-x86_64-minimal.iso

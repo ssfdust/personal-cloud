@@ -1,0 +1,7 @@
+/usr/bin/caddy		                        --	gen_context(system_u:object_r:httpd_exec_t,s0)
+
+/etc/caddy(/.*)?                                gen_context(system_u:object_r:httpd_config_t,s0)
+
+/var/lib/caddy(/.*)     		                gen_context(system_u:object_r:httpd_user_rw_content_t,s0)
+/usr/share/caddy(/.*)?					        gen_context(system_u:object_r:httpd_sys_content_t,s0)
+/var/log/caddy(/.*)?						    gen_context(system_u:object_r:httpd_log_t,s0)
