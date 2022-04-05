@@ -2,6 +2,13 @@
 set -e
 PROJECTPATH=$(cd `dirname $0`;cd ..;pwd)
 
+if [ ! -s "${PROJECTPATH}/qemu/.rootpw" ];
+then
+    echo -n Root Password:
+    read -s password
+    echo ${password} >"${PROJECTPATH}/qemu/.rootpw"
+fi
+
 AttachProject(){
     m4 "-DPROJECTPATH=${PROJECTPATH}" "${PROJECTPATH}/qemu/virtfs.xml.m4" > /tmp/virtfs.xml
     virsh attach-device rocky /tmp/virtfs.xml --live
