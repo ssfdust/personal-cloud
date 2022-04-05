@@ -1,0 +1,7 @@
+/srv/www/(.*/)?nextcloud/data(/.*)?                  gen_context(system_u:object_r:httpd_sys_rw_content_t,s0)
+/srv/www/(.*/)?nextcloud/config(/.*)?                gen_context(system_u:object_r:httpd_sys_rw_content_t,s0)
+/srv/www/(.*/)?nextcloud/apps(/.*)?                  gen_context(system_u:object_r:httpd_sys_rw_content_t,s0)
+/srv/www/(.*/)?nextcloud/.htaccess                   gen_context(system_u:object_r:httpd_sys_rw_content_t,s0)
+/srv/www/(.*/)?nextcloud/.user.ini                   gen_context(system_u:object_r:httpd_sys_rw_content_t,s0)
+/srv/www/(.*/)?nextcloud/3rdparty/aws/aws-sdk-php/src/data/logs(/.*)?            gen_context(system_u:object_r:httpd_sys_rw_content_t,s0)
+

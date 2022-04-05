@@ -1,8 +1,21 @@
 #!/bin/sh
 set -e
+
+HUGESIZE=$(sysctl -n vm.nr_hugepages)
 BASEDIR=$(cd `dirname $0`;pwd)
 
 source "${BASEDIR}/config"
+
+SetupHugePage() {
+    cur_nr_hugepages=$(sysctl -n vm.nr_hugepages)
+    hugepagesize=$(awk '/Hugepages/ {print $2}' /proc/meminfo)
+    nr_hugepages=$((${RAM} * 1024 / ${hugepagesize}))
+    if [[ ${cur_nr_hugepages} != ${nr_hugepages} ]];
+    then
+        echo "vm.nr_hugepages = ${hugepagesize}" >/etc/sysctl.d/40-hugepage.conf
+        reboot
+    fi
+}
 
 CreateVol(){
     virsh pool-define-as virtual dir - - - - /home/virtual/images
@@ -15,21 +28,24 @@ CreateVol(){
 CreateKvm(){
     local isofile=$(basename "${ISOSOURCE}")
     local qemuisofile="/var/lib/libvirt/images/${isofile}"
-    install -o libvirt-qemu -g libvirt-qemu -m644 "${ISOSOURCE}" "${qemuisofile}"
-    virt-install --name rocky --os-variant rocky8.4 \
-        --ram ${RAM} \
+    [ -f "${qemuisofile}" ] || install -o libvirt-qemu -g libvirt-qemu -m644 "${ISOSOURCE}" "${qemuisofile}"
+    virt-install --name rocky --os-variant rocky8.5 \
+        --memorybacking hugepages=yes \
         --vcpus=${CPUNUM} \
-        --cpu=host-passthrough \
+        --cpu=host,numa.cell.unit=MiB,numa.cell.memAccess=shared,numa.cell.memory=${RAM} \
         --virt-type kvm \
         --network bridge=virtbr0 \
-        --boot cdrom,loader=/usr/share/edk2-ovmf/x64/OVMF.fd \
-        --disk "${qemuisofile}",device=cdrom \
+        --boot hd,cdrom,bootmenu.enable=on,loader=/usr/share/edk2-ovmf/x64/OVMF.fd \
+        --location "${qemuisofile}" \
+        --check path_in_use=off \
         --disk vol=virtual/rocky \
+        --console pty,target_type=serial -x 'console=ttyS0,115200n8 serial' \
         --xml 'xpath.delete=./devices/graphics' \
         --xml './devices/graphics/@defaultMode=insecure' \
         --xml './devices/graphics/@autoport=no' \
         --xml './devices/graphics/@type=spice' \
-        --xml "./devices/graphics/@port=5930"
+        --xml "./devices/graphics/@port=5930" \
+        --wait
 }
 
 ConfigureNetwork(){
@@ -49,15 +65,15 @@ SetupSysctl() {
 }
 
 ConfigureFirewall() {
-    firewall-cmd --permanent --zone=public --add-forward
-    firewall-cmd --reload
+    firewall-cmd --permanent --zone=public --add-forward || :
+    firewall-cmd --reload || :
 }
 
 ResetNetwork() {
     nmcli connection down virtdummy0-br virtdummy0 virtbr0 || true
     nmcli connection delete virtdummy0-br virtdummy0 virtbr0 || true
-    firewall-cmd --permanent --zone=public --remove-forward
-    firewall-cmd --reload
+    firewall-cmd --permanent --zone=public --remove-forward || true
+    firewall-cmd --reload || true
     rm -rf /etc/sysctl.d/network-forwarding.conf
 }
 
@@ -70,13 +86,14 @@ RemoveStorage() {
 
 DeleteKvm() {
     virsh destroy rocky || true
-    virsh undefine rocky --managed-save || true
+    virsh undefine rocky --snapshots-metadata --managed-save || true
 }
 
 while getopts "iu" arg
 do
     case ${arg} in
         i)
+            SetupHugePage
             ConfigureNetwork
             CreateVol
             SetupSysctl

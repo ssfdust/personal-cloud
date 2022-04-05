@@ -8,11 +8,19 @@ InstallCaddy(){
 
 Initilize() {
     install -o caddy -g caddy -d /var/log/caddy
-    rpm -ivh /usr/local/src/rpms/caddy_selinux-*.rpm
+    dnf install -y /usr/local/src/rpms/caddy_selinux-*.rpm
     restorecon -R /var/log/caddy
-    semanage port -a -t http_port_t -p tcp 2019
+}
+
+ConfigureCaddy() {
+    install -d /etc/caddy/sites-enabled.d/
+    mv /etc/caddy/Caddyfile /etc/caddy/sites-enabled.d/index.conf
+    echo "import /etc/caddy/sites-enabled.d/*.conf" > /etc/caddy/Caddyfile
+    restorecon -R /etc/caddy
+    chcon -u system_u -R /etc/caddy
     systemctl enable caddy --now
 }
 
 InstallCaddy
 Initilize
+ConfigureCaddy

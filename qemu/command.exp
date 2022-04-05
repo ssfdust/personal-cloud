@@ -1,0 +1,42 @@
+#!/bin/expect
+
+set command [lindex $argv 0]
+set rootpwfile [lindex $argv 1]
+
+proc read_from_file {filename} {
+    set f [open $filename]
+    set data [read $f]
+    close $f
+    return $data
+}
+
+set rootpw [read_from_file $rootpwfile]
+spawn virsh console rocky
+expect {
+    "Escape character"     { send "\n" }
+}
+sleep 3
+while {1} {
+    expect {
+        login  {
+            send "root\n"
+            sleep 1
+        }
+        assword  {
+            send "$rootpw\n"
+            sleep 1
+        }
+        "]#"   {
+            send "\n"
+            sleep 1
+            break
+        }
+    }
+}
+
+expect {
+    "]#"    { send "$command\n" }
+}
+expect {
+    "]#"   { send "exit\n" }
+}

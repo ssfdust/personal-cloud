@@ -1,12 +1,16 @@
-all: releases
-	cd caddy && sh caddy.sh && mv noarch/* ../releases
+all: releases releases/caddy*.rpm releases/nextcloud*.rpm
 
 releases:
 	mkdir releases
 
-install:
-	rpm -ev caddy_selinux
-	rpm -ivh releases/*.rpm
+releases/caddy*.rpm:
+	$(MAKE) -C caddy all
+
+releases/nextcloud*.rpm:
+	$(MAKE) -C nextcloud all
+
+deploy:
+	cp releases/* ../packages
 
 clean:
 	find . -name "tmp" -type d -exec rm -rf {} \+
@@ -14,3 +18,4 @@ clean:
 	find . -name "*.pp" -exec rm -rf {} \;
 	find . -name "*.src.rpm" -exec rm -f {} \;
 	find . -name ".build" -type f -exec rm -rf {} \;
+	rm -rf releases

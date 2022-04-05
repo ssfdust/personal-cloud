@@ -1,0 +1,12 @@
+[Unit]
+Description=Purge old kernels
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/purge_old_kernels.sh
+ExecStart=%h/dotfiles/bin/notice-notmuch.sh
+
+[Install]
+WantedBy=multi-user.target 
